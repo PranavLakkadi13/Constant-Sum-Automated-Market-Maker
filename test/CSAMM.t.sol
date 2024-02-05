@@ -53,9 +53,65 @@ contract CSAMMTest is Test {
         vm.stopPrank();
     }
 
+    function testRevertOnZerosharesRemoval() public {
+        vm.expectRevert();
+        protocol.removeLiquidity(0);
+    }
+
+    function testSwap() public {
+        vm.startPrank(bob);
+        btc.approve(address(protocol),1000e18);
+        eth.approve(address(protocol), 1000e18);
+        protocol.addLiquidity(100e18, 100e18);
+        vm.stopPrank();
+
+        protocol.getToken0();
+        protocol.getToken1();
+
+        vm.startPrank(darth);
+        btc.approve(address(protocol), 10e18);
+        protocol.swap(address(btc), 5e18);
+        vm.stopPrank();
+    }
+
+    function testRefactorSwap() public {
+        vm.startPrank(bob);
+        btc.approve(address(protocol),1000e18);
+        eth.approve(address(protocol), 1000e18);
+        protocol.addLiquidity(100e18, 100e18);
+        vm.stopPrank();
+
+        protocol.getToken0();
+        protocol.getToken1();
+
+        vm.startPrank(darth);
+        btc.approve(address(protocol), 10e18);
+        protocol.refactorSwap(address(btc), 5e18);
+        vm.stopPrank();
+    }
+
+    function testFAilOnZeroAmountSwap() public {
+        vm.startPrank(darth);
+        btc.approve(address(protocol), 10e18);
+        vm.expectRevert();
+        protocol.refactorSwap(address(btc), 0);
+        vm.stopPrank();
+
+        vm.expectRevert();
+        protocol.swap(address(btc),0);
+    }
+
+    function testWhenAddress0ofTokens() public {
+        vm.expectRevert();
+        protocol.swap(address(0),1);
+    }
+
     function testRevertonNullAddressSwap() public {
         vm.expectRevert();
         protocol.swap(address(0), 1000e18);
+
+        vm.expectRevert();
+        protocol.refactorSwap(address(0), 11);
     }
 
     function testRevertOnNulladdressTokenTransfer() public {

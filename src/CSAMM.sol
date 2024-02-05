@@ -68,14 +68,20 @@ contract CSAMM {
     ////////////////////////////////////////////////////
 
     function swap(address _tokenIn, uint256 _amountIn) external returns (uint256 _amountOut) {
-        if (_tokenIn != address(i_token0) || _tokenIn != address(i_token1)) {
-            revert CSAMM__NotValidToken();
+        if (_amountIn == 0) {
+            revert CSAMM__ZeroAmountNotAllowed();
         }
-        
+
         if (_tokenIn == address(0)) {
             revert CSAMM__ZeroAddress();
         }
+        
+        if (_tokenIn != getToken0() && _tokenIn != getToken1()) {
+            revert CSAMM__NotValidToken();
+        }
 
+        // require(_tokenIn == getToken0() || _tokenIn == getToken1());
+        
         uint256 amountIn; 
 
         if (_tokenIn == address(i_token0)) {
@@ -110,16 +116,16 @@ contract CSAMM {
     }
 
     function refactorSwap(address _tokenIn, uint256 _amountIn) external {
-        if (_tokenIn != address(i_token0) || _tokenIn != address(i_token1)) {
-            revert CSAMM__NotValidToken();
-        }
-        
         if (_tokenIn == address(0)) {
             revert CSAMM__ZeroAddress();
         }
 
         if (_amountIn == 0) {
             revert CSAMM__ZeroAmountNotAllowed();
+        }
+        
+        if (_tokenIn != address(i_token0) && _tokenIn != address(i_token1)) {
+            revert CSAMM__NotValidToken();
         }
 
         bool istoken0 = _tokenIn == address(i_token0);
@@ -159,7 +165,9 @@ contract CSAMM {
         uint256 d1 = bal1 - s_reserve1;
 
         if (s_totalSupply == 0) {
-            shares = d0 + d1;
+            unchecked {
+                shares = d0 + d1;
+            }
         } else {
             shares = ((d0 + d1) * s_totalSupply)/(s_reserve0 + s_reserve1); 
         }
@@ -207,12 +215,12 @@ contract CSAMM {
     ///////// GETTER FUNCTIONS /////////////////////////
     ////////////////////////////////////////////////////
 
-    function getToken0() public view returns (IERC20) {
-        return i_token0;
+    function getToken0() public view returns (address) {
+        return address(i_token0);
     }
 
-    function getToken1() public view returns (IERC20) {
-        return i_token1;
+    function getToken1() public view returns (address) {
+        return address(i_token1);
     }
 
     function getReserve0() public view returns (uint256) {
