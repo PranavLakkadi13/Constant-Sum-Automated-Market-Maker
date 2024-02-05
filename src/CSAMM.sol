@@ -15,6 +15,14 @@ contract CSAMM {
     error CSAMM__NullSharesMinted();
 
     ////////////////////////////////////////////////////
+    /////////  Events //////////////////////////////////
+    ////////////////////////////////////////////////////
+
+    event LiquidityAdded(address indexed sender,uint256 indexed shares,uint256 amountToken0Added, uint256 amountToken1Added);
+    event LiquidityRemoved(address indexed sender, uint256 indexed amountToken0Out, uint256 indexed amountToken1Out);
+    event SwapToken(address indexed sender, address indexed token, uint256 indexed amountReturned, uint256 amountDepositedTowap);
+
+    ////////////////////////////////////////////////////
     ///////// State Variables //////////////////////////
     ////////////////////////////////////////////////////
 
@@ -97,6 +105,8 @@ contract CSAMM {
         else {
             i_token1.transfer(msg.sender, _amountOut);
         }
+
+        emit SwapToken(msg.sender, _tokenIn, _amountOut, amountIn);
     }
 
     function refactorSwap(address _tokenIn, uint256 _amountIn) external {
@@ -129,6 +139,8 @@ contract CSAMM {
         _update(res0, res1);
 
         tokenOut.transfer(msg.sender, amountOut);
+
+        emit SwapToken(msg.sender, _tokenIn, amountOut, amountIn);
     }
 
 
@@ -159,6 +171,9 @@ contract CSAMM {
         _mint(msg.sender, shares);
 
         _update(bal0, bal1);
+
+        emit LiquidityAdded(msg.sender, shares, _amount0, _amount1);
+
     }
 
 
@@ -184,6 +199,8 @@ contract CSAMM {
         if (d1 > 0) {
             i_token1.transfer(msg.sender, d1);
         }
+
+        emit LiquidityRemoved(msg.sender, d0, d1);
     }
 
     ////////////////////////////////////////////////////

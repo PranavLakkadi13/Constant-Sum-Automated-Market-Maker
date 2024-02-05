@@ -1,0 +1,6 @@
+CSAMMTest:testApproval() (gas: 67411)
+CSAMMTest:testGetterfunctions() (gas: 13434)
+CSAMMTest:testReturnSharesOnAddLiquidity() (gas: 226540)
+CSAMMTest:testRevertOnNulladdressTokenTransfer() (gas: 12493)
+CSAMMTest:testRevertonNullAddressSwap() (gas: 8736)
+CSAMMTest:testTokenDeposit() (gas: 227625)
