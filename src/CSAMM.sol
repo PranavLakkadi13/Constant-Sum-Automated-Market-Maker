@@ -12,6 +12,7 @@ contract CSAMM {
     error CSAMM__NotValidToken();
     error CSAMM__ZeroAddress();
     error CSAMM__ZeroAmountNotAllowed();
+    error CSAMM__NullSharesMinted();
 
     ////////////////////////////////////////////////////
     ///////// State Variables //////////////////////////
@@ -139,11 +140,51 @@ contract CSAMM {
         i_token0.transferFrom(msg.sender, address(this), _amount0);
         i_token1.transferFrom(msg.sender, address(this), _amount1);
 
-        
+        uint256 bal0 = i_token0.balanceOf(address(this));
+        uint256 bal1 = i_token1.balanceOf(address(this));
+
+        uint256 d0 = bal0 - s_reserve0;
+        uint256 d1 = bal1 - s_reserve1;
+
+        if (s_totalSupply == 0) {
+            shares = d0 + d1;
+        } else {
+            shares = ((d0 + d1) * s_totalSupply)/(s_reserve0 + s_reserve1); 
+        }
+
+        if (shares == 0) {
+            revert CSAMM__NullSharesMinted();
+        }
+
+        _mint(msg.sender, shares);
+
+        _update(bal0, bal1);
     }
 
 
-    function removeLiquidity() external {}
+    function removeLiquidity(uint256 _shares) external returns (uint256 d0, uint256 d1)
+    {
+        assembly {
+            if iszero(_shares) {
+                revert(0,0)
+            }
+        }
+
+        d0 = (s_reserve0 * _shares) / s_totalSupply;
+        d1 = (s_reserve1 * _shares) / s_totalSupply;
+
+        _burn(msg.sender,_shares);
+        
+        _update(s_reserve0 - d0, s_reserve1 - d1);
+
+        if (d0 > 0 ) {
+            i_token0.transfer(msg.sender, d0);
+        }
+
+        if (d1 > 0) {
+            i_token1.transfer(msg.sender, d1);
+        }
+    }
 
     ////////////////////////////////////////////////////
     ///////// GETTER FUNCTIONS /////////////////////////
