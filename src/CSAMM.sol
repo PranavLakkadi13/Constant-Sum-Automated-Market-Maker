@@ -1,5 +1,5 @@
 // SPDX-License-Identifier: MIT
-pragma solidity ^0.8.20;
+pragma solidity ^0.8.19;
 
 import { IERC20 } from "./IERC20.sol";
 
@@ -11,6 +11,7 @@ contract CSAMM {
 
     error CSAMM__NotValidToken();
     error CSAMM__ZeroAddress();
+    error CSAMM__ZeroAmountNotAllowed();
 
     ////////////////////////////////////////////////////
     ///////// State Variables //////////////////////////
@@ -54,7 +55,7 @@ contract CSAMM {
     }
 
     ////////////////////////////////////////////////////
-    ///////// Extrenal Functions ///////////////////////
+    ///////// External Functions ///////////////////////
     ////////////////////////////////////////////////////
 
     function swap(address _tokenIn, uint256 _amountIn) external returns (uint256 _amountOut) {
@@ -97,8 +98,51 @@ contract CSAMM {
         }
     }
 
+    function refactorSwap(address _tokenIn, uint256 _amountIn) external {
+        if (_tokenIn != address(i_token0) || _tokenIn != address(i_token1)) {
+            revert CSAMM__NotValidToken();
+        }
+        
+        if (_tokenIn == address(0)) {
+            revert CSAMM__ZeroAddress();
+        }
 
-    function addLiquidity() external {}
+        if (_amountIn == 0) {
+            revert CSAMM__ZeroAmountNotAllowed();
+        }
+
+        bool istoken0 = _tokenIn == address(i_token0);
+
+        (IERC20 tokenIn, IERC20 tokenOut, uint256 resIn, uint256 resOut) = istoken0 ? 
+        (i_token0,i_token1,s_reserve0,s_reserve1) : (i_token1,i_token0, s_reserve1, s_reserve0);
+
+        tokenIn.transferFrom(msg.sender, address(this), _amountIn);
+
+        uint256 amountIn = tokenIn.balanceOf(address(this)) - resIn;
+
+        uint256 amountOut = (amountIn * 997)/ 1000;
+
+        (uint256 res0, uint256 res1) = istoken0 ? 
+        (resIn + amountIn, resOut - amountOut) : (resIn - amountIn, resOut + amountOut);
+
+        _update(res0, res1);
+
+        tokenOut.transfer(msg.sender, amountOut);
+    }
+
+
+    function addLiquidity(uint256 _amount0, uint256 _amount1) external returns (uint256 shares) {
+        if (_amount0 == 0 || _amount1 == 0) {
+            revert CSAMM__ZeroAmountNotAllowed();
+        }
+
+        i_token0.transferFrom(msg.sender, address(this), _amount0);
+        i_token1.transferFrom(msg.sender, address(this), _amount1);
+
+        
+    }
+
+
     function removeLiquidity() external {}
 
     ////////////////////////////////////////////////////
