@@ -12,13 +12,11 @@ contract CSAMMScript is Script {
     MockBTC public eth;
     CSAMM public protocol;
 
-    function setUp() public {
+    function run() public {
+        vm.startBroadcast();
         btc = new MockBTC("BITCOIN","BTC");
         eth = new MockBTC("ETHEREUM","ETH");
         protocol = new CSAMM(address(btc),address(eth));
-    }
-
-    function run() public {
-        vm.broadcast();
+        vm.stopBroadcast();
     }
 }

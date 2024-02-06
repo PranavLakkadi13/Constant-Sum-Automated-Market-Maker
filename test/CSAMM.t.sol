@@ -97,20 +97,20 @@ contract CSAMMTest is Test {
         protocol.refactorSwap(address(btc), 0);
         vm.stopPrank();
 
-        vm.expectRevert();
+        vm.expectRevert(CSAMM.CSAMM__ZeroAmountNotAllowed.selector);
         protocol.swap(address(btc),0);
     }
 
     function testWhenAddress0ofTokens() public {
-        vm.expectRevert();
+        vm.expectRevert(CSAMM.CSAMM__ZeroAddress.selector);
         protocol.swap(address(0),1);
     }
 
     function testRevertonNullAddressSwap() public {
-        vm.expectRevert();
+        vm.expectRevert(CSAMM.CSAMM__ZeroAddress.selector);
         protocol.swap(address(0), 1000e18);
 
-        vm.expectRevert();
+        vm.expectRevert(CSAMM.CSAMM__ZeroAddress.selector);
         protocol.refactorSwap(address(0), 11);
     }
 
@@ -147,6 +147,81 @@ contract CSAMMTest is Test {
         assertEq(bal, 0);
     }
 
+    function testAddliquidity() public {
+        uint32 amount = 1000;
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        uint256 y = protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.startPrank(darth);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        uint256 x = protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        assertEq(y, x);
+    }
     
+    function testRemoveLiquidity() public {
+        uint32 amount = 1000;
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.startPrank(darth);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.prank(bob);
+        protocol.removeLiquidity(100);
+
+        uint256 x = protocol.getTotalSupplyShares();
+        assert(x  == 3900);
+    }
+
+    function testRemoveLiquiditySHouldFailWhenANullUserCalls() public {
+        uint32 amount = 1000;
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.startPrank(darth);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+        
+        // When testing custom errors use the type of the contrcat instead of the object of the contract
+        vm.expectRevert(CSAMM.CSAMM__DidNotDepositLiquidity.selector);
+        protocol.removeLiquidity(100);
+    }
+
+    function testSwaping() public {
+        uint32 amount = 10000;
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.startPrank(darth);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        protocol.swap(address(btc), amount);
+        vm.stopPrank();
+    }
     
 }

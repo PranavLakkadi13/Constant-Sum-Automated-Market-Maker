@@ -13,6 +13,7 @@ contract CSAMM {
     error CSAMM__ZeroAddress();
     error CSAMM__ZeroAmountNotAllowed();
     error CSAMM__NullSharesMinted();
+    error CSAMM__DidNotDepositLiquidity();
 
     ////////////////////////////////////////////////////
     /////////  Events //////////////////////////////////
@@ -191,6 +192,10 @@ contract CSAMM {
             if iszero(_shares) {
                 revert(0,0)
             }
+        }
+
+        if (s_balanceOf[msg.sender] <= 0) {
+            revert CSAMM__DidNotDepositLiquidity();
         }
 
         d0 = (s_reserve0 * _shares) / s_totalSupply;
