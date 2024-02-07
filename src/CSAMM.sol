@@ -21,7 +21,7 @@ contract CSAMM {
 
     event LiquidityAdded(address indexed sender,uint256 indexed shares,uint256 amountToken0Added, uint256 amountToken1Added);
     event LiquidityRemoved(address indexed sender, uint256 indexed amountToken0Out, uint256 indexed amountToken1Out);
-    event SwapToken(address indexed sender, address indexed token, uint256 indexed amountReturned, uint256 amountDepositedTowap);
+    event SwapToken(address sender, address indexed token, uint256 indexed amountReturned, uint256 indexed amountDepositedTowap);
 
     ////////////////////////////////////////////////////
     ///////// State Variables //////////////////////////
@@ -77,7 +77,7 @@ contract CSAMM {
             revert CSAMM__ZeroAddress();
         }
         
-        if (_tokenIn != getToken0() && _tokenIn != getToken1()) {
+        if (_tokenIn != getToken0() || _tokenIn != getToken1()) {
             revert CSAMM__NotValidToken();
         }
 
@@ -116,7 +116,7 @@ contract CSAMM {
         emit SwapToken(msg.sender, _tokenIn, _amountOut, amountIn);
     }
 
-    function refactorSwap(address _tokenIn, uint256 _amountIn) external {
+    function refactorSwap(address _tokenIn, uint256 _amountIn) external returns (uint256 amountOut){
         if (_tokenIn == address(0)) {
             revert CSAMM__ZeroAddress();
         }
@@ -138,7 +138,7 @@ contract CSAMM {
 
         uint256 amountIn = tokenIn.balanceOf(address(this)) - resIn;
 
-        uint256 amountOut = (amountIn * 997)/ 1000;
+        amountOut = (amountIn * 997)/ 1000;
 
         (uint256 res0, uint256 res1) = istoken0 ? 
         (resIn + amountIn, resOut - amountOut) : (resIn - amountIn, resOut + amountOut);

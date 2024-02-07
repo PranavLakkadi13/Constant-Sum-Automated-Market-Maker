@@ -8,6 +8,10 @@ import { MockBTC } from "../src/MockERC20.sol";
 
 contract CSAMMTest is Test {
 
+    event LiquidityAdded(address indexed sender,uint256 indexed shares,uint256 amountToken0Added, uint256 amountToken1Added);
+    event LiquidityRemoved(address indexed sender, uint256 indexed amountToken0Out, uint256 indexed amountToken1Out);
+    event SwapToken(address sender, address indexed token, uint256 indexed amountReturned, uint256 indexed amountDepositedTowap);
+
     MockBTC public btc;
     MockBTC public eth;
     CSAMM public protocol;
@@ -220,8 +224,74 @@ contract CSAMMTest is Test {
 
         vm.startPrank(bob);
         btc.approve(address(protocol),amount);
-        protocol.swap(address(btc), amount);
+
+        address token0 = protocol.getToken0();
+        assertEq(token0, address(btc));
+
+        uint256 x = protocol.swap(address(btc), amount);
         vm.stopPrank();
+
+        assert(x == 9970);
+    }
+
+    function testRefactorSwaping() public {
+        uint32 amount = 10000;
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        vm.expectEmit(true, true, false, false);
+        emit LiquidityAdded(address(bob), 2 * amount, amount, amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.startPrank(darth);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        vm.expectEmit(false, true, true , true);
+        emit SwapToken(address(bob), address(btc), 9970, amount);
+        uint256 x = protocol.refactorSwap(address(btc), amount);
+        vm.stopPrank();
+
+        assert(x == 9970);
+    }
+
+    function testReservesAfterSwaps() public {
+        uint32 amount = 10000;
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        vm.expectEmit(true, true, false, false);
+        emit LiquidityAdded(address(bob), 2 * amount, amount, amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.startPrank(darth);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        vm.expectEmit(false, true, true , true);
+        emit SwapToken(address(bob), address(btc), 9970, amount);
+        uint256 x = protocol.refactorSwap(address(btc), amount);
+        vm.stopPrank();
+
+        assert(protocol.getReserve0() == 30000);
+        assert(protocol.getReserve1() == (20000 - 9970));
+
+        assertEq(x, 9970);
+    }
+
+    function testFailOnSwappingWrongToken() public {
+        // vm.expectRevert();
+        protocol.swap(address(bob), 1000);
     }
     
 }
