@@ -77,11 +77,11 @@ contract CSAMM {
             revert CSAMM__ZeroAddress();
         }
         
-        if (_tokenIn != getToken0() || _tokenIn != getToken1()) {
-            revert CSAMM__NotValidToken();
-        }
+        // if (_tokenIn != getToken0() || _tokenIn != getToken1()) {
+        //     revert CSAMM__NotValidToken();
+        // }
 
-        // require(_tokenIn == getToken0() || _tokenIn == getToken1());
+        require(_tokenIn == getToken0() || _tokenIn == getToken1());
         
         uint256 amountIn; 
 

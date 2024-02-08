@@ -292,6 +292,33 @@ contract CSAMMTest is Test {
     function testFailOnSwappingWrongToken() public {
         // vm.expectRevert();
         protocol.swap(address(bob), 1000);
+        protocol.refactorSwap(address(bob), 1000);
+    }
+
+    function testFailOnSwapAmount0() public {
+        protocol.swap(address(btc),0);
+        protocol.refactorSwap(address(btc), 0);
+    }
+
+    function testFailOnSwapTokenAddress0() public {
+        protocol.swap(address(0),10);
+        protocol.refactorSwap(address(0), 10);
+    }
+
+    function testRemoovingLiquidty() public {
+        uint32 amount = 10000;
+        vm.startPrank(bob);
+        btc.approve(address(protocol),amount);
+        eth.approve(address(protocol),amount);
+        vm.expectEmit(true, true, false, false);
+        emit LiquidityAdded(address(bob), 2 * amount, amount, amount);
+        protocol.addLiquidity(amount, amount);
+        vm.stopPrank();
+
+        vm.expectEmit();
+        emit LiquidityRemoved(address(bob), 50, 50);
+        vm.prank(bob);
+        protocol.removeLiquidity(100);
     }
     
 }
